@@ -11,9 +11,7 @@ object boundingBox:
       
     case Ellipse(radiusX, radiusY) =>
       // Ellipse parameters are radii, so bounding box is twice the size
-      val width = radiusX * 2
-      val height = radiusY * 2
-      Location(-radiusX, -radiusY, Rectangle(width, height))
+      Location(-radiusX, -radiusY, Rectangle(radiusX * 2, radiusY * 2))
       
     case Location(x, y, shape) =>
       val innerBox = boundingBox(shape)
@@ -33,12 +31,39 @@ object boundingBox:
   // Helper methods to extract width and height from shape
   private def getWidth(shape: Shape): Int = shape match
     case Rectangle(width, _) => width
-    case Ellipse(radiusX, _) => radiusX * 2  // Ellipse width is twice the radius
+    case Ellipse(radiusX, _) => radiusX * 2
     case _ => 0
   
   private def getHeight(shape: Shape): Int = shape match
     case Rectangle(_, height) => height
-    case Ellipse(_, radiusY) => radiusY * 2  // Ellipse height is twice the radius
+    case Ellipse(_, radiusY) => radiusY * 2
     case _ => 0
 
 end boundingBox
+
+object size:
+  def apply(s: Shape): Int = s match
+    case Rectangle(_, _) => 1
+    case Ellipse(_, _) => 1
+    case Location(_, _, shape) => size(shape)
+    case Group(shapes @ _*) => shapes.map(size.apply).sum
+
+object height:
+  def apply(s: Shape): Int = s match
+    case Rectangle(_, _) => 1
+    case Ellipse(_, _) => 1
+    case Location(_, _, shape) => 1 + height(shape)
+    case Group(shapes @ _*) => 
+      if shapes.isEmpty then 0
+      else shapes.map(height.apply).max
+
+object scale:
+  def apply(s: Shape, factor: Double): Shape = s match
+    case Rectangle(width, height) => 
+      Rectangle((width * factor).toInt, (height * factor).toInt)
+    case Ellipse(radiusX, radiusY) => 
+      Ellipse((radiusX * factor).toInt, (radiusY * factor).toInt)
+    case Location(x, y, shape) => 
+      Location((x * factor).toInt, (y * factor).toInt, scale(shape, factor))
+    case Group(shapes @ _*) => 
+      Group(shapes.map(scale(_, factor))*)
